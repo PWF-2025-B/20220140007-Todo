@@ -91,8 +91,39 @@
                                     </span>
                                 </span>
                             </td>
-                            <td class="px-6 py-4">
-                                <!-- Action buttons can be placed here -->
+                
+                            <td class="px-6 py-4 flex gap-4">
+                                 <div class="flex items-center gap-4">
+ 
+                                     @if ($data->is_admin)
+                                     <form action="{{ route('user.removeadmin', $data) }}" method="Post">
+                                         @csrf
+                                         @method('PATCH')
+                                         <button type="submit"
+                                             class="text-blue-600 dark:text-blue-400 whitespace-nowrap">
+                                             Remove Admin
+                                         </button>
+                                     </form>
+                                     @else
+                                     <form action="{{ route('user.makeadmin', $data) }}" method="Post">
+                                         @csrf
+                                         @method('PATCH')
+                                         <button type="submit"
+                                             class="text-yellow-600 dark:text-yellow-400 whitespace-nowrap">
+                                             Make Admin
+                                         </button>
+                                     </form>
+                                     @endif
+                                     <form action="{{ route('user.destroy', $data) }}" method="Post">
+                                         @csrf
+                                         @method('delete')
+                                         <button type="submit"
+                                             class="text-red-600 dark:text-red-400 whitespace-nowrap">
+                                             Delete
+                                         </button>
+                                     </form>
+ 
+                                 </div>
                             </td>
                         </tr>
                         @empty
@@ -107,10 +138,10 @@
             </div>
 
             @if ($users->hasPages())
-            <div class="p-6">
-                {{ $users->Links()}}
-            </div>
-            @endif
+             <div class="p-6">
+                 {{ $users->Links()}}
+             </div>
+             @endif
 
         </div>
     </div>
