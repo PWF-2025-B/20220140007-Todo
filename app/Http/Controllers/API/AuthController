@@ -1,0 +1,109 @@
+<?php
+
+namespace App\Http\Controllers\API;
+
+use App\Http\Controllers\Controller;
+use Exception;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Tymon\JWTAuth\Facades\JWTAuth;
+use Illuminate\Http\Response;
+
+/**
+ * @group Auth
+ * Endpoint untuk otentikasi pengguna (login dan logout).
+ */
+class AuthController extends Controller
+{
+    /**
+     * Login user dengan email dan password.
+     *
+     * @bodyParam email string required Email pengguna. Contoh: user@example.com
+     * @bodyParam password string required Password pengguna. Contoh: rahasia123
+     *
+     * @response status=200 {
+     *   "status_code": 200,
+     *   "message": "Login berhasil",
+     *   "data": {
+     *     "user": {
+     *       "id": 1,
+     *       "name": "John Doe",
+     *       "email": "john@example.com",
+     *       "is_admin": false
+     *     },
+     *     "token": "JWT_TOKEN_HERE"
+     *   }
+     * }
+     *
+     * @response status=401 {
+     *   "status_code": 401,
+     *   "message": "Email atau password salah"
+     * }
+     */
+    public function login(Request $request)
+    {
+        $data = $request->validate([
+            'email' => 'required|email',
+            'password' => 'required|string|min:6',
+        ]);
+
+        try {
+            if (!$token = Auth::guard('api')->attempt($data)) {
+                return response()->json([
+                    'status_code' => Response::HTTP_UNAUTHORIZED,
+                    'message' => 'Email atau password salah',
+                ], Response::HTTP_UNAUTHORIZED);
+            }
+
+            $user = Auth::guard('api')->user();
+
+            return response()->json([
+                'status_code' => Response::HTTP_OK,
+                'message' => 'Login berhasil',
+                'data' => [
+                    'user' => [
+                        'id' => $user->id,
+                        'name' => $user->name,
+                        'email' => $user->email,
+                        'is_admin' => $user->is_admin,
+                    ],
+                    'token' => $token,
+                ],
+            ], Response::HTTP_OK);
+        } catch (Exception $e) {
+            return response()->json([
+                'status_code' => Response::HTTP_INTERNAL_SERVER_ERROR,
+                'message' => 'Terjadi kesalahan saat login.',
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * Logout user yang sedang login.
+     *
+     * Menghapus token JWT agar tidak bisa digunakan lagi.
+     *
+     * @authenticated
+     *
+     * @response status=200 {
+     *   "status_code": 200,
+     *   "message": "Logout berhasil. Token telah dihapus."
+     * }
+     */
+    public function logout(Request $request)
+    {
+        try {
+            JWTAuth::invalidate(JWTAuth::getToken());
+
+            return response()->json([
+                'status_code' => Response::HTTP_OK,
+                'message' => 'Logout berhasil. Token telah dihapus.',
+            ], Response::HTTP_OK);
+        } catch (Exception $e) {
+            return response()->json([
+                'status_code' => Response::HTTP_INTERNAL_SERVER_ERROR,
+                'message' => 'Gagal logout. Terjadi kesalahan.',
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+}
